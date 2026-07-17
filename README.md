@@ -19,5 +19,5 @@ It can apply Mica (or any other backdrop materials) on the non-client area (wind
 > Mica For Everyone is not responsible for rendering the effects you set, it just asks Windows to do that for you. If there's any problem with the effects it's a third-party issue. Try creating a rule for the affected apps and try different settings before opening an issue for it.
 
 ## 🕹 How do I get it?
-- Download from the [Microsoft Store](https://apps.microsoft.com/detail/9P8V68P4Z78P), or
-- Go to **[Releases page](https://github.com/MicaForEveryone/MicaForEveryone/releases) > Assets > and choose the appropriate download** or [just click here to download the latest version of Mica For Everyone](https://github.com/MicaForEveryone/MicaForEveryone/releases/latest).
+- [Microsoft Store](https://apps.microsoft.com/detail/9P8V68P4Z78P?cid=mfegithubreadme), or
+- [App Installer sideload](https://micaforeveryone.github.io/MicaForEveryone.appinstaller)

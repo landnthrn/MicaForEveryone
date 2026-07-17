@@ -289,30 +289,30 @@
     <value>Mica For Everyone Ayarları</value>
   </data>
   <data name="InvalidConfigTitle" xml:space="preserve">
-    <value />
+    <value>Geçersiz yapılandırma dosyası</value>
   </data>
   <data name="InvalidConfigMessage" xml:space="preserve">
-    <value />
+    <value>Yapılandırma dosyası yanlış biçimlendirilmiş ya da bozuk.</value>
   </data>
   <data name="TelemetryCard.Header" xml:space="preserve">
-    <value />
+    <value>Telemetri</value>
   </data>
   <data name="TelemetryCard.Description" xml:space="preserve">
-    <value />
+    <value>Anonim çökme verisini otomatik olarak geliştiriciye gönderir.</value>
   </data>
   <data name="TelemetryLabel.Text" xml:space="preserve">
-    <value />
+    <value>Telemetri</value>
   </data>
   <data name="CustomColorCard.Header" xml:space="preserve">
-    <value />
+    <value>Özel renk</value>
   </data>
   <data name="OkButton.Content" xml:space="preserve">
-    <value />
+    <value>Tamam</value>
   </data>
   <data name="CancelButton.Content" xml:space="preserve">
     <value>Kapat</value>
   </data>
   <data name="PrivacyButton.Content" xml:space="preserve">
-    <value />
+    <value>Gizlilik Politikası</value>
   </data>
 </root>
