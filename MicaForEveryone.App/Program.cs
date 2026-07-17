@@ -2,6 +2,7 @@
 using MicaForEveryone.CoreUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml.Settings;
 using Microsoft.Windows.AppLifecycle;
 using System;
 using System.Threading;
@@ -19,6 +20,9 @@ class Program
 
         if (DecideRedirectionAsync().Result == true)
             return;
+
+        XamlOptionalChanges.EnableChange(XamlChangeId.DefaultStyleOptimizations);
+        XamlOptionalChanges.EnableChange(XamlChangeId.OptimizeApplyStyles);
 
         Microsoft.UI.Xaml.Application.Start((p) =>
         {

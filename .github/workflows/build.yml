@@ -76,7 +76,7 @@ jobs:
       - name: Copy artifacts
         run: |
           $isStore = "${{ matrix.channel }}" -eq "Store"
-          $extensions = if ($isStore) { (".msixupload") } else { (".msixbundle", ".appxsym", ".appinstaller") }
+          $extensions = (".msixupload", ".msixbundle", ".appxsym", ".appinstaller")
           $outputDir = "${{ github.workspace }}\output"
           $appPackagesDir = Get-ChildItem -Path . -Directory -Recurse |
             Where-Object { $_.Name -eq "AppPackages" } |
@@ -127,8 +127,6 @@ jobs:
 
           $releaseBaseUrl = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}"
           $msixbundleFileName = $msixbundlePath.Name
-          $targetAppInstallerFileName = "MicaForEveryone.appinstaller"
-          $targetAppInstallerPath = Join-Path $outputDir $targetAppInstallerFileName
 
           [xml]$appInstallerXml = Get-Content -LiteralPath $appInstallerPath.FullName
           $namespaceManager = New-Object System.Xml.XmlNamespaceManager($appInstallerXml.NameTable)
@@ -170,9 +168,7 @@ jobs:
 
           $appInstallerXml.Save($appInstallerPath.FullName)
 
-          if ($appInstallerPath.FullName -ine $targetAppInstallerPath) {
-            Move-Item -LiteralPath $appInstallerPath.FullName -Destination $targetAppInstallerPath -Force
-          }
+          Copy-Item -LiteralPath $appInstallerPath.FullName -Destination $outputDir -Force
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
