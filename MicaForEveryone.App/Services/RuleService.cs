@@ -360,7 +360,9 @@ public sealed class RuleService : IRuleService
 
         if (mostApplicableRule.ExtendFrameIntoClientArea)
         {
-            MARGINS margins = new() { cxLeftWidth = -1, cxRightWidth = -1, cyTopHeight = -1, cyBottomHeight = -1 };
+            const int FullClientAreaMargin = 32767;
+            int margin = _is22000.Value ? -1 : FullClientAreaMargin;
+            MARGINS margins = new() { cxLeftWidth = margin, cxRightWidth = margin, cyTopHeight = margin, cyBottomHeight = margin };
             unsafe
             {
                 DwmExtendFrameIntoClientArea(hWnd, &margins);
