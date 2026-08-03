@@ -3,6 +3,7 @@ using MicaForEveryone.CoreUI;
 using MicaForEveryone.Models;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -64,6 +65,13 @@ public ref struct Ref<T>
 
 public sealed class RuleService : IRuleService
 {
+    private enum WindowState
+    {
+        Normal,
+        Minimized,
+        Maximized
+    }
+
     [DllImport("user32")]
     private static extern BOOL IsTopLevelWindow(HWND hWnd);
 
@@ -72,7 +80,12 @@ public sealed class RuleService : IRuleService
 
     private readonly ISettingsService _settingsService;
     private readonly IThemingService _themingService;
-    private HWINEVENTHOOK _eventHookHandler;
+    private readonly ConcurrentDictionary<HWND, WindowState> _windowStates = new();
+    private readonly ConcurrentDictionary<HWND, byte> _windowsWithEffectStateChange = new();
+    private HWINEVENTHOOK _showEventHook;
+    private HWINEVENTHOOK _minimizeEndEventHook;
+    private HWINEVENTHOOK _locationChangeEventHook;
+    private HWINEVENTHOOK _destroyEventHook;
 
     public BackdropType[] SupportedBackdropTypes { get; }
 
@@ -97,7 +110,15 @@ public sealed class RuleService : IRuleService
 
     public unsafe void Initialize()
     {
-        _eventHookHandler = SetWinEventHook(EVENT.EVENT_OBJECT_SHOW, EVENT.EVENT_OBJECT_SHOW, HMODULE.NULL, &NewWindowShown, 0, 0, WINEVENT_OUTOFCONTEXT);
+        _showEventHook = SetWinEventHook(EVENT.EVENT_OBJECT_SHOW, EVENT.EVENT_OBJECT_SHOW, HMODULE.NULL, &NewWindowShown, 0, 0, WINEVENT_OUTOFCONTEXT);
+
+        if (!_is22000.Value)
+        {
+            _minimizeEndEventHook = SetWinEventHook(EVENT.EVENT_SYSTEM_MINIMIZEEND, EVENT.EVENT_SYSTEM_MINIMIZEEND, HMODULE.NULL, &WindowStateChanged, 0, 0, WINEVENT_OUTOFCONTEXT);
+            _locationChangeEventHook = SetWinEventHook(EVENT.EVENT_OBJECT_LOCATIONCHANGE, EVENT.EVENT_OBJECT_LOCATIONCHANGE, HMODULE.NULL, &WindowStateChanged, 0, 0, WINEVENT_OUTOFCONTEXT);
+            _destroyEventHook = SetWinEventHook(EVENT.EVENT_OBJECT_DESTROY, EVENT.EVENT_OBJECT_DESTROY, HMODULE.NULL, &WindowDestroyed, 0, 0, WINEVENT_OUTOFCONTEXT);
+        }
+
         _settingsService.PropertyChanged += _settingsService_PropertyChanged;
     }
 
@@ -109,14 +130,61 @@ public sealed class RuleService : IRuleService
     [UnmanagedCallersOnly]
     private static void NewWindowShown(HWINEVENTHOOK handler, uint winEvent, HWND hWnd, int idObject, int idChild, uint idEventThread, uint dwmsEventTime)
     {
-        static async Task NewWindowShowHandlerAsync(IRuleService service, HWND hwnd)
+        static async Task NewWindowShowHandlerAsync(RuleService service, HWND hwnd)
         {
             if (!IsWindowEligible(hwnd))
                 await Task.Delay(10);
+
+            service.RememberWindowState(hwnd);
             await service.ApplyRuleToWindowAsync(hwnd);
         }
 
-        _ = NewWindowShowHandlerAsync(App.Services.GetRequiredService<IRuleService>(), hWnd).ConfigureAwait(false);
+        _ = NewWindowShowHandlerAsync((RuleService)App.Services.GetRequiredService<IRuleService>(), hWnd).ConfigureAwait(false);
+    }
+
+    [UnmanagedCallersOnly]
+    private static void WindowStateChanged(HWINEVENTHOOK handler, uint winEvent, HWND hWnd, int idObject, int idChild, uint idEventThread, uint dwmsEventTime)
+    {
+        const int ObjIdWindow = 0;
+        const int ChildIdSelf = 0;
+
+        if (hWnd == HWND.NULL)
+            return;
+
+        if (winEvent == (uint)EVENT.EVENT_OBJECT_LOCATIONCHANGE && (idObject != ObjIdWindow || idChild != ChildIdSelf))
+            return;
+
+        RuleService service = (RuleService)App.Services.GetRequiredService<IRuleService>();
+        WindowState currentState = GetWindowState(hWnd);
+        bool hadPreviousState = service._windowStates.TryGetValue(hWnd, out WindowState previousState);
+        service._windowStates[hWnd] = currentState;
+
+        if (currentState == WindowState.Minimized)
+            return;
+
+        if (winEvent == (uint)EVENT.EVENT_OBJECT_LOCATIONCHANGE && (!hadPreviousState || previousState == currentState || previousState == WindowState.Minimized))
+            return;
+
+        if (!service.ShouldReapplyAfterWindowStateChange(hWnd))
+            return;
+
+        bool isFirstEffectStateChange = service._windowsWithEffectStateChange.TryAdd(hWnd, 0);
+        bool reapplyAfterSettled = isFirstEffectStateChange && currentState == WindowState.Maximized;
+        _ = service.ReapplyAfterWindowStateChangeAsync(hWnd, reapplyAfterSettled).ConfigureAwait(false);
+    }
+
+    [UnmanagedCallersOnly]
+    private static void WindowDestroyed(HWINEVENTHOOK handler, uint winEvent, HWND hWnd, int idObject, int idChild, uint idEventThread, uint dwmsEventTime)
+    {
+        const int ObjIdWindow = 0;
+        const int ChildIdSelf = 0;
+
+        if (hWnd != HWND.NULL && idObject == ObjIdWindow && idChild == ChildIdSelf)
+        {
+            RuleService service = (RuleService)App.Services.GetRequiredService<IRuleService>();
+            service._windowStates.TryRemove(hWnd, out _);
+            service._windowsWithEffectStateChange.TryRemove(hWnd, out _);
+        }
     }
 
     private void CallEnumWindows()
@@ -154,7 +222,9 @@ public sealed class RuleService : IRuleService
 
         unsafe
         {
-            Unsafe.AsRef<Ref<RuleService>>(lParam).GetReference().ApplyRuleToWindowAsync(hWnd);
+            RuleService service = Unsafe.AsRef<Ref<RuleService>>(lParam).GetReference();
+            service.RememberWindowState(hWnd);
+            service.ApplyRuleToWindowAsync(hWnd);
         }
 
         return BOOL.TRUE;
@@ -184,6 +254,49 @@ public sealed class RuleService : IRuleService
             return false;
 
         return true;
+    }
+
+    private static WindowState GetWindowState(HWND hWnd)
+    {
+        if (IsIconic(hWnd))
+            return WindowState.Minimized;
+
+        return IsZoomed(hWnd) ? WindowState.Maximized : WindowState.Normal;
+    }
+
+    private void RememberWindowState(HWND hWnd)
+    {
+        if (hWnd != HWND.NULL && IsTopLevelWindow(hWnd))
+            _windowStates[hWnd] = GetWindowState(hWnd);
+    }
+
+    private bool ShouldReapplyAfterWindowStateChange(HWND hWnd)
+    {
+        Rule? rule = _settingsService.Settings?.Rules
+            .Where(candidate => candidate.IsRuleApplicable(hWnd))
+            .OrderByDescending(candidate => candidate.Priority)
+            .FirstOrDefault();
+
+        return rule is not null && (rule.ExtendFrameIntoClientArea || rule.EnableBlurBehind);
+    }
+
+    private async Task ReapplyAfterWindowStateChangeAsync(HWND hWnd, bool reapplyAfterSettled)
+    {
+        if (!IsWindowEligible(hWnd))
+            await Task.Delay(10);
+
+        if (!IsWindowEligible(hWnd) || !ShouldReapplyAfterWindowStateChange(hWnd))
+            return;
+
+        await ApplyRuleToWindowAsync(hWnd);
+
+        if (!reapplyAfterSettled)
+            return;
+
+        await Task.Delay(10);
+
+        if (GetWindowState(hWnd) == WindowState.Maximized && IsWindowEligible(hWnd) && ShouldReapplyAfterWindowStateChange(hWnd))
+            await ApplyRuleToWindowAsync(hWnd);
     }
 
     public Task ApplyRuleToWindowAsync(HWND hWnd)
