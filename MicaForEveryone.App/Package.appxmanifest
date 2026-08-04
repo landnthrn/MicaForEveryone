@@ -11,15 +11,15 @@
   IgnorableNamespaces="desktop uap uap5 rescap">
 
 	<Identity
-	  Name="MicaForEveryone.MicaForEveryone2"
-	  Publisher="CN=Đặng Bình Minh, O=Đặng Bình Minh, L=Hà Nội, C=VN"
+	  Name="MicaForEveryone.Fork"
+	  Publisher="CN=MicaForEveryoneFork"
 	  Version="2.0.7.0" />
 
-	<mp:PhoneIdentity PhoneProductId="d18ae762-9000-47c9-bb55-868c79f41ead" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+	<mp:PhoneIdentity PhoneProductId="8b6525c1-2c64-46fd-85e6-c22f013f3219" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
 	<Properties>
 		<DisplayName>Mica For Everyone</DisplayName>
-		<PublisherDisplayName>Dongle Insovaki</PublisherDisplayName>
+		<PublisherDisplayName>Mica For Everyone Fork</PublisherDisplayName>
 		<Logo>Assets\StoreLogo.png</Logo>
 	</Properties>
 
