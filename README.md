@@ -46,9 +46,17 @@ For any apps that DWMBlurGlass works on, MicaForEveryone just simply extends wha
   - Browse and select 'Trusted Root Certification Authorities' as the Certificate Store
 - Use the `MicaForEveryoneFork-2.0.7.0-x64.msix` or `MicaForEveryoneFork.appinstaller`
 
-**You're `settings.json` is created at:**  
-`\Users\%USERNAME%\AppData\Local\Packages\MicaForEveryone.Fork_nk222gb55598j\LocalState`  
-If you import a `settings.json` made from upstream Mica you should add `#32770` as an exclusion class for global and notepad process rule, this way the notepad popups brightness fix will remain.  
+### Notes
+- **You're `settings.json` is created at:**  
+  `\Users\%USERNAME%\AppData\Local\Packages\MicaForEveryone.Fork_nk222gb55598j\LocalState`  
+  If you import a `settings.json` made from upstream Mica you should add `#32770` as an exclusion class for global and notepad process rule, this way the notepad popups brightness fix will remain.  
+- The tray icon may behave odd at times, it's just WinUI3 weirdness on Win10
+
+## Uninstall
+- Uninstall it like any app from 'Add or Remove Programs'
+- Use `Win + R` then `certlm.msc` to open Microsoft Management Console
+- Select 'Trusted Root Certification Authorities' > Certificates
+- Find 'MicaForEveryoneFork' and delete it
 
 ---
 
