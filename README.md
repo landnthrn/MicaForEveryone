@@ -13,10 +13,13 @@ Fix the left, right, & bottom edges of windows from having extended transparency
 Fixed all notepad popups from being bright.    
 Additionally added that exclude classes ability as an option to all other process rules.   
 
-## Info
-> My options for release were either require you to enable Windows Developer Mode to use, or I pay for a real code-signing certificate, or just self-sign `.cer` + `.msix` or `.appinstaller` installers. Obvious choice is self-sign by my certificate.
+## Info (Please Read)
+> [!NOTE]
+> My options for release were either require you to enable Windows Developer Mode to use, or I pay for a real code-signing certificate, or just self-sign `.cer` + `.msix` or `.appinstaller` installers. Obvious choice is self-sign by my certificate or your own.   
+>**Just understand that Windows will warn you multiple times about the risks of installing certificates.** 
 
-### If you want your own signing identity:
+### If you want your own signing identity
+- Fork the repo
 - Change the package identity/publisher in `MicaForEveryone.App/Package.appxmanifest`  
 - Sign the `MSIX` with your own certificate  
 - Update the URLs inside `MicaForEveryoneFork.appinstaller` to point to your own GitHub release files  
@@ -29,11 +32,11 @@ Additionally added that exclude classes ability as an option to all other proces
    The actual installable app package.  
 
 - `MicaForEveryoneFork.appinstaller`:  
-   Installer/update entry point that points Windows to the hosted MSIX in this GitHub release.  
+   Installer with update ability that points to this repo's GitHub releases, or your own if you did your own signing identity.  
 
 ## Required for Window Transparency on Win10
 #### [DWMBlurGlass](https://github.com/Maplespe/DWMBlurGlass) 
-For any apps that DWMBlurGlass works on, MicaForEveryone just simply extends what DWMBlurGlass does to their title bars, into the client's frame. 
+For any apps that DWMBlurGlass works on, MicaForEveryone just simply extends what DWM does to title bars, into the client's frame. If DWM doesn't apply for an app then Mica can only work for it if the app has true-transparency support either built in, add-on/mod, or via patch. 
 
 ## Install
 - Install files from [Releases](https://github.com/landnthrn/MicaForEveryone/releases)   
