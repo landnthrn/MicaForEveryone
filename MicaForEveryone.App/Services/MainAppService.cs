@@ -22,6 +22,7 @@ public sealed unsafe class MainAppService
     SettingsWindow? _window;
     private uint _taskbarCreatedMessage;
     private NOTIFYICONDATAW* _notifyIconData;
+    private int _notificationIconRestoreTicksRemaining;
 
     public void Initialize()
     {
@@ -64,6 +65,7 @@ public sealed unsafe class MainAppService
         {
             _taskbarCreatedMessage = RegisterWindowMessageW(lpWindowMessage);
         }
+
     }
 
     public void ActivateSettings()
@@ -73,6 +75,7 @@ public sealed unsafe class MainAppService
         _window.Activate();
         HWND hwnd = new HWND((void*)WindowNative.GetWindowHandle(_window));
         SetForegroundWindow(hwnd);
+        StartNotificationIconRestoreTimer(_mainWnd);
     }
 
     [DynamicWindowsRuntimeCast(typeof(Window))]
@@ -80,12 +83,34 @@ public sealed unsafe class MainAppService
     {
         ((Microsoft.UI.Xaml.Window)sender).Closed -= _window_Closed;
         _window = null;
+        RestoreNotificationIcon();
     }
 
     public void Shutdown()
     {
         _window?.Close();
         DestroyWindow(_mainWnd);
+    }
+
+    private void RestoreNotificationIcon()
+    {
+        if (_notifyIconData == null)
+            return;
+
+        if (!Shell_NotifyIconW(NIM_MODIFY, _notifyIconData))
+        {
+            Shell_NotifyIconW(NIM_ADD, _notifyIconData);
+            Shell_NotifyIconW(NIM_SETVERSION, _notifyIconData);
+        }
+    }
+
+    private void StartNotificationIconRestoreTimer(HWND hwnd)
+    {
+        if (hwnd == HWND.NULL)
+            return;
+
+        _notificationIconRestoreTicksRemaining = 5;
+        SetTimer(hwnd, AppIds.NotificationIconRestoreTimerId, 1000, null);
     }
 
     [UnmanagedCallersOnly]
@@ -116,6 +141,7 @@ public sealed unsafe class MainAppService
 
                     NOTIFYICONDATAW* notifyIconData = appService._notifyIconData = (NOTIFYICONDATAW*)NativeMemory.AllocZeroed((nuint)sizeof(NOTIFYICONDATAW));
                     notifyIconData->hWnd = hWnd;
+                    notifyIconData->uID = (uint)AppIds.NotificationIconId;
                     notifyIconData->guidItem = AppIds.NotificationIconGuid;
                     notifyIconData->cbSize = (uint)sizeof(NOTIFYICONDATAW);
                     notifyIconData->hIcon = smallIcon;
@@ -129,6 +155,7 @@ public sealed unsafe class MainAppService
                     AppIds.NotificationIconTooltip.CopyTo(MemoryMarshal.CreateSpan(ref notifyIconData->szTip[0], 128));
                     Shell_NotifyIconW(NIM_ADD, notifyIconData);
                     Shell_NotifyIconW(NIM_SETVERSION, notifyIconData);
+                    appService.StartNotificationIconRestoreTimer(hWnd);
                     break;
                 }
 
@@ -138,8 +165,9 @@ public sealed unsafe class MainAppService
                     NOTIFYICONIDENTIFIER id = new NOTIFYICONIDENTIFIER()
                     {
                         cbSize = (uint)sizeof(NOTIFYICONIDENTIFIER),
-                        uID = 1,
-                        hWnd = hWnd
+                        uID = (uint)AppIds.NotificationIconId,
+                        hWnd = hWnd,
+                        guidItem = AppIds.NotificationIconGuid
                     };
                     Shell_NotifyIconGetRect(&id, &iconRect);
                     HMONITOR monitor = MonitorFromRect(&iconRect, MONITOR.MONITOR_DEFAULTTONULL);
@@ -186,6 +214,26 @@ public sealed unsafe class MainAppService
                     break;
                 }
 
+            case WM.WM_TIMER:
+                {
+                    var pointer = GetWindowLongPtrW(hWnd, GWL.GWL_USERDATA);
+                    if (pointer == IntPtr.Zero)
+                        break;
+
+                    if (wParam.Value != AppIds.NotificationIconRestoreTimerId)
+                        break;
+
+                    var gc = GCHandle.FromIntPtr(pointer);
+                    var appService = (MainAppService)(gc.Target!);
+                    appService.RestoreNotificationIcon();
+
+                    if (--appService._notificationIconRestoreTicksRemaining <= 0)
+                    {
+                        KillTimer(hWnd, AppIds.NotificationIconRestoreTimerId);
+                    }
+                    break;
+                }
+
             case WM.WM_DESTROY:
                 {
                     var pointer = GetWindowLongPtrW(hWnd, GWL.GWL_USERDATA);
@@ -212,11 +260,7 @@ public sealed unsafe class MainAppService
                     var appService = (MainAppService?)(gc.Target);
                     if (Msg == appService?._taskbarCreatedMessage)
                     {
-                        if (!Shell_NotifyIconW(NIM_MODIFY, appService._notifyIconData))
-                        {
-                            Shell_NotifyIconW(NIM_ADD, appService._notifyIconData);
-                            Shell_NotifyIconW(NIM_SETVERSION, appService._notifyIconData);
-                        }
+                        appService.RestoreNotificationIcon();
                         return 0;
                     }
                     break;

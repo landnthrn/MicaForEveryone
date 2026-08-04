@@ -9,6 +9,7 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using TerraFX.Interop.Windows;
 using Windows.UI;
@@ -36,11 +37,12 @@ public sealed partial class SettingsWindow : Window
         AppWindow.TitleBar.ButtonBackgroundColor = AppWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
         ChangeButtonBackground();
         Title = LocalizationService.GetLocalizedString("SettingsWindowTitle");
-        AppWindow.SetIcon("Assets\\MicaForEveryone.ico");
+        AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "MicaForEveryone.ico"));
 
         unsafe
         {
             HWND hwnd = new HWND((void*)WinRT.Interop.WindowNative.GetWindowHandle(this));
+            SetNativeWindowIcon(hwnd);
             SetWindowSubclass(hwnd, &WindowProc, 0, 0);
 
             uint dpi = GetDpiForWindow(hwnd);
@@ -63,6 +65,32 @@ public sealed partial class SettingsWindow : Window
             AppWindow.Move(new Windows.Graphics.PointInt32(x, y));
         }
         // NavigationViewControl.SelectedItem = NavigationViewControl.FooterMenuItems.Last();
+    }
+
+    private static unsafe void SetNativeWindowIcon(HWND hwnd)
+    {
+        const uint WM_SETICON = 0x0080;
+        const int ICON_SMALL = 0;
+        const int ICON_BIG = 1;
+        const uint IMAGE_ICON = 1;
+        const uint LR_LOADFROMFILE = 0x00000010;
+        const int SM_CXICON = 11;
+        const int SM_CYICON = 12;
+        const int SM_CXSMICON = 49;
+        const int SM_CYSMICON = 50;
+
+        string iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "MicaForEveryone.ico");
+        fixed (char* lpIconPath = iconPath)
+        {
+            HANDLE largeIcon = LoadImageW(HINSTANCE.NULL, lpIconPath, IMAGE_ICON, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), LR_LOADFROMFILE);
+            HANDLE smallIcon = LoadImageW(HINSTANCE.NULL, lpIconPath, IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_LOADFROMFILE);
+
+            if (largeIcon != HANDLE.NULL)
+                SendMessageW(hwnd, WM_SETICON, new WPARAM(ICON_BIG), new LPARAM((nint)largeIcon.Value));
+
+            if (smallIcon != HANDLE.NULL)
+                SendMessageW(hwnd, WM_SETICON, new WPARAM(ICON_SMALL), new LPARAM((nint)smallIcon.Value));
+        }
     }
 
     [UnmanagedCallersOnly]

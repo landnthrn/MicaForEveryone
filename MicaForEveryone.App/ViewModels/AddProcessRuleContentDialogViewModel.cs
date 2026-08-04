@@ -60,7 +60,14 @@ public partial class AddProcessRuleContentDialogViewModel : ObservableObject
     [RelayCommand]
     private async Task AddRuleAsync()
     {
-        _settingsService.Settings!.Rules.Insert(1, new ProcessRule() { ProcessName = ProcessName });
+        ProcessRule rule = new() { ProcessName = ProcessName };
+
+        if (ProcessName.Equals("notepad", System.StringComparison.CurrentCultureIgnoreCase))
+        {
+            rule.ExcludedClassNames = "#32770";
+        }
+
+        _settingsService.Settings!.Rules.Insert(1, rule);
         await _settingsService.SaveAsync();
     }
 }

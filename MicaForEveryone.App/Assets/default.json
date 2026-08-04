@@ -3,15 +3,13 @@
 		{
 			"type": "global",
 			"titleBarColor": "System",
-			"backdropPreference": "Mica"
+			"backdropPreference": "Mica",
+			"excludedClassNames": "#32770"
 		},
 		{
 			"type": "process",
-			"processName": "explorer"
-		},
-		{
-			"type": "process",
-			"processName": "notepad"
+			"processName": "notepad",
+			"excludedClassNames": "#32770"
 		}
 	]
 }
