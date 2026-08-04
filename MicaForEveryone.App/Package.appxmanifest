@@ -51,12 +51,12 @@
 			<Extensions>
 				<uap3:Extension Category="windows.appExecutionAlias" Executable="MicaForEveryone.App.exe" EntryPoint="Windows.FullTrustApplication">
 					<uap3:AppExecutionAlias>
-						<desktop:ExecutionAlias Alias="mfe.exe" />
-						<desktop:ExecutionAlias Alias="MicaForEveryone.exe" />
+						<desktop:ExecutionAlias Alias="mfe-fork.exe" />
+						<desktop:ExecutionAlias Alias="MicaForEveryoneFork.exe" />
 					</uap3:AppExecutionAlias>
 				</uap3:Extension>
 				<uap5:Extension Category="windows.startupTask" Executable="MicaForEveryone.App.exe" EntryPoint="Windows.FullTrustApplication">
-					<uap5:StartupTask TaskId="MicaForEveryone2" Enabled="false" DisplayName="Mica For Everyone" />				
+					<uap5:StartupTask TaskId="MicaForEveryoneFork" Enabled="false" DisplayName="Mica For Everyone Fork" />
 				</uap5:Extension>
 			</Extensions>
 		</Application>

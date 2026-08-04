@@ -13,6 +13,8 @@ namespace MicaForEveryone.App;
 
 class Program
 {
+    internal static bool IsStartupActivation { get; private set; }
+
     [STAThread]
     public static void Main(string[] _)
     {
@@ -36,7 +38,8 @@ class Program
     {
         bool isRedirect = false;
         AppActivationArguments args = AppInstance.GetCurrent().GetActivatedEventArgs();
-        AppInstance keyInstance = AppInstance.FindOrRegisterForKey("MicaForEveryone");
+        IsStartupActivation = args.Kind == ExtendedActivationKind.StartupTask;
+        AppInstance keyInstance = AppInstance.FindOrRegisterForKey(AppIds.InstanceKey);
 
         if (keyInstance.IsCurrent)
         {
@@ -54,6 +57,8 @@ class Program
     {
         if (App.Services.GetService<IDispatchingService>() is IDispatchingService dispatcher)
             await dispatcher.YieldAsync();
-        App.Services.GetService<MainAppService>()?.ActivateSettings();
+
+        if (e.Kind != ExtendedActivationKind.StartupTask)
+            App.Services.GetService<MainAppService>()?.ActivateSettings();
     }
 }

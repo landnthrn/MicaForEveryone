@@ -50,8 +50,12 @@ namespace MicaForEveryone.App
                 return;
             }
             Services.GetRequiredService<IRuleService>().Initialize();
-            Services.GetRequiredService<MainAppService>().Initialize();
+            MainAppService mainAppService = Services.GetRequiredService<MainAppService>();
+            mainAppService.Initialize();
             _ = Services.GetRequiredService<IRuleService>().ApplyRulesToAllWindowsAsync();
+
+            if (!Program.IsStartupActivation)
+                mainAppService.ActivateSettings();
         }
 
         private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)

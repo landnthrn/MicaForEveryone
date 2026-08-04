@@ -30,7 +30,7 @@ public sealed unsafe class MainAppService
         LoadIconMetric(instance, IDI.IDI_APPLICATION, (int)_LI_METRIC.LIM_LARGE, &largeIcon);
         LoadIconMetric(instance, IDI.IDI_APPLICATION, (int)_LI_METRIC.LIM_SMALL, &smallIcon);
 
-        fixed (char* lpClassName = "MicaForEveryoneNotificationIcon")
+        fixed (char* lpClassName = AppIds.NotificationIconWindowClass)
         {
             WNDCLASSEXW wndClass = new()
             {
@@ -52,7 +52,7 @@ public sealed unsafe class MainAppService
         }
         nint gcHandlePtr = GCHandle.ToIntPtr(GCHandle.Alloc(this));
 
-        fixed (char* lpWindowTitle = "MicaForEveryoneNotificationIcon")
+        fixed (char* lpWindowTitle = AppIds.NotificationIconWindowClass)
         {
             _mainWnd = CreateWindowExW(WS.WS_EX_NOACTIVATE | WS.WS_EX_TOPMOST | WS.WS_EX_TOOLWINDOW, lpWindowTitle, null, WS.WS_POPUPWINDOW, 0, 0, 0, 0, HWND.NULL, HMENU.NULL, instance, gcHandlePtr.ToPointer());
         }
@@ -116,7 +116,7 @@ public sealed unsafe class MainAppService
 
                     NOTIFYICONDATAW* notifyIconData = appService._notifyIconData = (NOTIFYICONDATAW*)NativeMemory.AllocZeroed((nuint)sizeof(NOTIFYICONDATAW));
                     notifyIconData->hWnd = hWnd;
-                    notifyIconData->guidItem = new Guid([0xA0, 0x23, 0x5A, 0x9F, 0xC6, 0xB6, 0x41, 0x89, 0xAE, 0x4B, 0xAC, 0x00, 0x9F, 0xC6, 0x78, 0x7C]);
+                    notifyIconData->guidItem = AppIds.NotificationIconGuid;
                     notifyIconData->cbSize = (uint)sizeof(NOTIFYICONDATAW);
                     notifyIconData->hIcon = smallIcon;
                     notifyIconData->uVersion = 4;
@@ -126,7 +126,7 @@ public sealed unsafe class MainAppService
                     // so we just tell Windows to show it for us.
                     // It might look a bit ugly, but it works.
                     notifyIconData->uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP | NIF_GUID | NIF_SHOWTIP;
-                    "Mica For Everyone".CopyTo(MemoryMarshal.CreateSpan(ref notifyIconData->szTip[0], 128));
+                    AppIds.NotificationIconTooltip.CopyTo(MemoryMarshal.CreateSpan(ref notifyIconData->szTip[0], 128));
                     Shell_NotifyIconW(NIM_ADD, notifyIconData);
                     Shell_NotifyIconW(NIM_SETVERSION, notifyIconData);
                     break;
