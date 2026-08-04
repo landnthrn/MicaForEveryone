@@ -272,10 +272,7 @@ public sealed class RuleService : IRuleService
 
     private bool ShouldReapplyAfterWindowStateChange(HWND hWnd)
     {
-        Rule? rule = _settingsService.Settings?.Rules
-            .Where(candidate => candidate.IsRuleApplicable(hWnd))
-            .OrderByDescending(candidate => candidate.Priority)
-            .FirstOrDefault();
+        Rule? rule = GetMostApplicableRule(hWnd);
 
         return rule is not null && (rule.ExtendFrameIntoClientArea || rule.EnableBlurBehind);
     }
@@ -304,7 +301,13 @@ public sealed class RuleService : IRuleService
         if (!IsWindowEligible(hWnd))
             return Task.CompletedTask;
 
-        Rule mostApplicableRule = _settingsService.Settings!.Rules.Where(f => f.IsRuleApplicable(hWnd)).OrderByDescending(x => x.Priority).First();
+        Rule? mostApplicableRule = GetMostApplicableRule(hWnd);
+
+        if (mostApplicableRule is null)
+        {
+            ClearRuleFromWindow(hWnd);
+            return Task.CompletedTask;
+        }
 
         unsafe
         {
@@ -399,5 +402,77 @@ public sealed class RuleService : IRuleService
         }
 
         return Task.CompletedTask;
+    }
+
+    private Rule? GetMostApplicableRule(HWND hWnd)
+    {
+        Rule[] rules = _settingsService.Settings!.Rules.ToArray();
+
+        bool isExcludedByProcessRule = rules
+            .OfType<ProcessRule>()
+            .Any(rule => rule.IsProcessMatch(hWnd) && rule.IsWindowClassExcluded(hWnd));
+
+        Rule? mostApplicableRule = rules
+            .Where(rule => rule.IsRuleApplicable(hWnd))
+            .OrderByDescending(rule => rule.Priority)
+            .FirstOrDefault();
+
+        if (isExcludedByProcessRule && mostApplicableRule is GlobalRule)
+        {
+            return null;
+        }
+
+        return mostApplicableRule;
+    }
+
+    private void ClearRuleFromWindow(HWND hWnd)
+    {
+        unsafe
+        {
+            const uint DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+            uint useImmersiveDarkMode = 0;
+            DwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &useImmersiveDarkMode, sizeof(uint));
+
+            const uint DWMWA_CAPTION_COLOR = 35;
+            uint defaultCaption = DWMWA_COLOR_DEFAULT;
+            DwmSetWindowAttribute(hWnd, DWMWA_CAPTION_COLOR, &defaultCaption, sizeof(uint));
+
+            if (AreAdditionalMaterialsSupported)
+            {
+                const uint DWMWA_SYSTEMBACKDROP_TYPE = 38;
+                uint defaultBackdrop = (uint)BackdropType.Default;
+                DwmSetWindowAttribute(hWnd, DWMWA_SYSTEMBACKDROP_TYPE, &defaultBackdrop, sizeof(uint));
+            }
+            else
+            {
+                const uint DWMWA_MICA_EFFECT = 1029;
+                int micaValue = 0;
+                DwmSetWindowAttribute(hWnd, DWMWA_MICA_EFFECT, &micaValue, sizeof(int));
+            }
+
+            MARGINS margins = default;
+            DwmExtendFrameIntoClientArea(hWnd, &margins);
+
+            DWM_BLURBEHIND bb = new()
+            {
+                fEnable = BOOL.FALSE,
+                dwFlags = DWM.DWM_BB_ENABLE,
+                fTransitionOnMaximized = BOOL.FALSE,
+                hRgnBlur = HRGN.NULL
+            };
+            DwmEnableBlurBehindWindow(hWnd, &bb);
+
+            ACCENT_POLICY accent = new()
+            {
+                AccentState = ACCENT_STATE.ACCENT_DISABLED
+            };
+            WINDOWCOMPOSITIONATTRIBDATA attrib = new()
+            {
+                Attrib = WINDOWCOMPOSITIONATTRIB.WCA_ACCENT_POLICY,
+                pvData = (nint)(&accent),
+                cbData = (uint)sizeof(ACCENT_POLICY)
+            };
+            SetWindowCompositionAttribute(hWnd, &attrib);
+        }
     }
 }

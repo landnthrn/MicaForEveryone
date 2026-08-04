@@ -135,6 +135,15 @@
   <data name="BlurBehindCard.Header" xml:space="preserve">
     <value>Enable blur behind</value>
   </data>
+  <data name="ExcludedClassNamesCard.Header" xml:space="preserve">
+    <value>Excluded classes</value>
+  </data>
+  <data name="ExcludedClassNamesCard.Description" xml:space="preserve">
+    <value>Window classes to clear and ignore for this rule, separated with commas.</value>
+  </data>
+  <data name="ExcludedClassNamesTextBox.PlaceholderText" xml:space="preserve">
+    <value>#32770</value>
+  </data>
   <data name="CheckForUpdatesButton.Content" xml:space="preserve">
     <value>Check for updates</value>
   </data>

@@ -125,6 +125,20 @@
                 <ToggleSwitch IsOn="{x:Bind Rule.EnableBlurBehind, Mode=TwoWay}" />
             </ct:SettingsCard>
 
+            <ct:SettingsCard
+                x:Name="ExcludedClassNamesCard"
+                x:Uid="ExcludedClassNamesCard"
+                x:Load="{x:Bind local:RuleSettingsPage.SupportsExcludedClassNames(Rule)}">
+                <ct:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE8A7;" />
+                </ct:SettingsCard.HeaderIcon>
+
+                <TextBox
+                    x:Uid="ExcludedClassNamesTextBox"
+                    MinWidth="180"
+                    Text="{x:Bind ExcludedClassNames, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            </ct:SettingsCard>
+
             <TextBlock
                 x:Uid="RemoveLabel"
                 x:Name="RemoveLabel"

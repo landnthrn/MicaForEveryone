@@ -18,6 +18,27 @@ namespace MicaForEveryone.App.Views;
 public sealed partial class RuleSettingsPage : Page
 {
     private Rule? Rule { get; set; }
+    private string? ExcludedClassNames
+    {
+        get => Rule switch
+        {
+            GlobalRule globalRule => globalRule.ExcludedClassNames,
+            ProcessRule processRule => processRule.ExcludedClassNames,
+            _ => null
+        };
+        set
+        {
+            switch (Rule)
+            {
+                case GlobalRule globalRule:
+                    globalRule.ExcludedClassNames = value;
+                    break;
+                case ProcessRule processRule:
+                    processRule.ExcludedClassNames = value;
+                    break;
+            }
+        }
+    }
     private ISettingsService SettingsService { get; }
     private IRuleService RuleService { get; }
     private ILocalizationService LocalizationService { get; }
@@ -75,6 +96,11 @@ public sealed partial class RuleSettingsPage : Page
     public static bool IsNotGlobalRule(Rule rule)
     {
         return !(rule is GlobalRule);
+    }
+
+    public static bool SupportsExcludedClassNames(Rule rule)
+    {
+        return rule is GlobalRule or ProcessRule;
     }
 
     private void SettingsCard_Click(object sender, RoutedEventArgs e)
