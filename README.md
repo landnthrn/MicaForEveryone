@@ -3,6 +3,48 @@
 </p>
 <h1 align="center">Mica For Everyone!</h1>
 
+# Fork Note
+**MicaForEveryone with some fixes for Windows 10 users**  
+- [Fix Win10 window-state transparency refresh](https://github.com/MicaForEveryone/MicaForEveryone/commit/b32e3e21c1e4cb533c36337df8148655fd7141cd)  
+Prevent apps from losing transparency when maximized/minimized   
+- [Fix Win10 extended frame edge overspill](https://github.com/MicaForEveryone/MicaForEveryone/commit/173ee3fd45221b3ad787a9ffe1d413e09f5f3308)  
+Fix the left, right, & bottom edges of windows from having extended transparency effect  
+- [Fix Notepad popups & add exclude classes option to process rules](https://github.com/MicaForEveryone/MicaForEveryone/commit/7863e536d31cc718f2e16edaca21b77f4576b93f)  
+Fixed all notepad popups from being bright.    
+Additionally added that exclude classes ability as an option to all other process rules.   
+
+## Info
+> My options for release were either require you to enable Windows Developer Mode to use, or I pay for a real code-signing certificate, or just self-sign `.cer` + `.msix` or `.appinstaller` installers. Obvious choice is self-sign by my certificate.
+
+### If you want your own signing identity:
+- Change the package identity/publisher in `MicaForEveryone.App/Package.appxmanifest`  
+- Sign the `MSIX` with your own certificate  
+- Update the URLs inside `MicaForEveryoneFork.appinstaller` to point to your own GitHub release files  
+
+### Files
+- `MicaForEveryoneFork.cer`:  
+   Public certificate used to let Windows trust this self-signed MSIX package.  
+
+- `MicaForEveryoneFork-2.0.7.0-x64.msix`:  
+   The actual installable app package.  
+
+- `MicaForEveryoneFork.appinstaller`:  
+   Installer/update entry point that points Windows to the hosted MSIX in this GitHub release.  
+
+## Required for Window Transparency on Win10
+#### [DWMBlurGlass](https://github.com/Maplespe/DWMBlurGlass) 
+For any apps that DWMBlurGlass works on, MicaForEveryone just simply extends what DWMBlurGlass does to their title bars, into the client's frame. 
+
+## Install
+- Install files from [Releases](https://github.com/landnthrn/MicaForEveryone/releases)   
+- Open `MicaForEveryoneFork.cer`  
+  - Choose 'Local Machine' as the install point
+  - When prompted choose 'Place all certificates in the following store'  
+  - Browse and select 'Trusted Root Certification Authorities' as the Certificate Store
+- Use the `MicaForEveryoneFork-2.0.7.0-x64.msix` or `MicaForEveryoneFork.appinstaller`  
+
+---
+
 > [!CAUTION]
 >
 > **PHISHING ALERT!** The website micaforeveryone[.]com is **NOT AFFILIATED WITH THE MICA FOR EVERYONE MAINTAINERS**,
