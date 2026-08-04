@@ -46,7 +46,8 @@ For any apps that DWMBlurGlass works on, MicaForEveryone just simply extends wha
   - Browse and select 'Trusted Root Certification Authorities' as the Certificate Store
 - Use the `MicaForEveryoneFork-2.0.7.0-x64.msix` or `MicaForEveryoneFork.appinstaller`
 
-You're `settings.json` is created at `\Users\%USERNAME%\AppData\Local\Packages\MicaForEveryone.Fork_nk222gb55598j\LocalState`
+**You're `settings.json` is created at:**  
+`\Users\%USERNAME%\AppData\Local\Packages\MicaForEveryone.Fork_nk222gb55598j\LocalState`  
 If you import a `settings.json` made from upstream Mica you should add `#32770` as an exclusion class for global and notepad process rule, this way the notepad popups brightness fix will remain.  
 
 ---
