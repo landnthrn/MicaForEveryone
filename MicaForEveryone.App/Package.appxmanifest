@@ -13,7 +13,7 @@
 	<Identity
 	  Name="MicaForEveryone.Fork"
 	  Publisher="CN=MicaForEveryoneFork"
-	  Version="2.0.7.0" />
+	  Version="2.0.7.1" />
 
 	<mp:PhoneIdentity PhoneProductId="8b6525c1-2c64-46fd-85e6-c22f013f3219" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
