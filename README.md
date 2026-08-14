@@ -6,11 +6,11 @@
 # Fork Note
 **MicaForEveryone with some fixes for Windows 10 users**  
 - [Fix Win10 window-state transparency refresh](https://github.com/MicaForEveryone/MicaForEveryone/commit/b32e3e21c1e4cb533c36337df8148655fd7141cd)  
-Prevent apps from losing transparency when maximized/minimized or after sleep wakeup  
+Prevents apps from losing transparency when maximized/minimized or after sleep wakeup  
 - [Fix Win10 extended frame edge overspill](https://github.com/MicaForEveryone/MicaForEveryone/commit/173ee3fd45221b3ad787a9ffe1d413e09f5f3308)  
-Fix the left, right, & bottom edges of windows from having extended transparency effect  
+Fixes the left, right, & bottom edges of windows from having extended transparency effect  
 - [Fix brightly washed classic dialog popups & add exclude classes option to process rules](https://github.com/MicaForEveryone/MicaForEveryone/commit/7863e536d31cc718f2e16edaca21b77f4576b93f)  
-Fixed Windows classic dialog popups that were really bright due to Mica (e.g. Notepad popups like word search)   
+Fixes Windows classic dialog popups that were really bright due to Mica (e.g. Notepad popups like word search)   
 Additionally added that exclude classes ability as an option to all other process rules.   
 
 ## Info (Please Read)
