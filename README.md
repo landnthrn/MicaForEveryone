@@ -6,11 +6,11 @@
 # Fork Note
 **MicaForEveryone with some fixes for Windows 10 users**  
 - [Fix Win10 window-state transparency refresh](https://github.com/MicaForEveryone/MicaForEveryone/commit/b32e3e21c1e4cb533c36337df8148655fd7141cd)  
-Prevent apps from losing transparency when maximized/minimized   
+Prevent apps from losing transparency when maximized/minimized or after sleep wakeup  
 - [Fix Win10 extended frame edge overspill](https://github.com/MicaForEveryone/MicaForEveryone/commit/173ee3fd45221b3ad787a9ffe1d413e09f5f3308)  
 Fix the left, right, & bottom edges of windows from having extended transparency effect  
-- [Fix Notepad popups & add exclude classes option to process rules](https://github.com/MicaForEveryone/MicaForEveryone/commit/7863e536d31cc718f2e16edaca21b77f4576b93f)  
-Fixed all notepad popups from being bright.    
+- [Fix brightly washed classic dialog popups & add exclude classes option to process rules](https://github.com/MicaForEveryone/MicaForEveryone/commit/7863e536d31cc718f2e16edaca21b77f4576b93f)  
+Fixed Windows classic dialog popups that were really bright due to Mica (e.g. Notepad popups like word search)   
 Additionally added that exclude classes ability as an option to all other process rules.   
 
 ## Info (Please Read)
@@ -28,7 +28,7 @@ Additionally added that exclude classes ability as an option to all other proces
 - `MicaForEveryoneFork.cer`:  
    Public certificate used to let Windows trust this self-signed MSIX package.  
 
-- `MicaForEveryoneFork-2.0.7.0-x64.msix`:  
+- `MicaForEveryoneFork-2.0.7.1-x64.msix`:  
    The actual installable app package.  
 
 - `MicaForEveryoneFork.appinstaller`:  
@@ -44,13 +44,16 @@ For any apps that DWMBlurGlass works on, MicaForEveryone just simply extends wha
   - Choose 'Local Machine' as the install point
   - When prompted choose 'Place all certificates in the following store'  
   - Browse and select 'Trusted Root Certification Authorities' as the Certificate Store
-- Use the `MicaForEveryoneFork-2.0.7.0-x64.msix` or `MicaForEveryoneFork.appinstaller`
+- Use the `MicaForEveryoneFork-2.0.7.1-x64.msix` or `MicaForEveryoneFork.appinstaller`
 
 ### Notes
-- **You're `settings.json` is created at:**  
+- **Your `settings.json` is created at:**  
   `\Users\%USERNAME%\AppData\Local\Packages\MicaForEveryone.Fork_nk222gb55598j\LocalState`  
   If you import a `settings.json` made from upstream Mica you should add `#32770` as an exclusion class for global and notepad process rule, this way the notepad popups brightness fix will remain.  
 - The tray icon may behave odd at times, it's just WinUI3 weirdness on Win10
+
+## Known Issue
+The minimized system tray icon may disappear after opening or closing the app, though the app is still running. It's finicky due to the unique situation of a WinUI3 app on Windows 10 + Microsoft Store type build.  
 
 ## Uninstall
 - Uninstall it like any app from 'Add or Remove Programs'
