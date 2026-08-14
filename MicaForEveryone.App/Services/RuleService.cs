@@ -7,6 +7,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using TerraFX.Interop.Windows;
 using static TerraFX.Interop.Windows.Windows;
@@ -82,6 +83,7 @@ public sealed class RuleService : IRuleService
     private readonly IThemingService _themingService;
     private readonly ConcurrentDictionary<HWND, WindowState> _windowStates = new();
     private readonly ConcurrentDictionary<HWND, byte> _windowsWithEffectStateChange = new();
+    private int _resumeReapplyGeneration;
     private HWINEVENTHOOK _showEventHook;
     private HWINEVENTHOOK _minimizeEndEventHook;
     private HWINEVENTHOOK _locationChangeEventHook;
@@ -120,6 +122,31 @@ public sealed class RuleService : IRuleService
         }
 
         _settingsService.PropertyChanged += _settingsService_PropertyChanged;
+    }
+
+    public void RequestReapplyAfterResume()
+    {
+        if (_is22000.Value)
+            return;
+
+        _ = ReapplyAfterResumeAsync().ConfigureAwait(false);
+    }
+
+    private async Task ReapplyAfterResumeAsync()
+    {
+        int generation = Interlocked.Increment(ref _resumeReapplyGeneration);
+
+        await Task.Delay(100);
+        if (generation != Volatile.Read(ref _resumeReapplyGeneration))
+            return;
+
+        await ApplyRulesToAllWindowsAsync();
+
+        await Task.Delay(10);
+        if (generation != Volatile.Read(ref _resumeReapplyGeneration))
+            return;
+
+        await ApplyRulesToAllWindowsAsync();
     }
 
     private void _settingsService_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -408,6 +435,10 @@ public sealed class RuleService : IRuleService
     {
         Rule[] rules = _settingsService.Settings!.Rules.ToArray();
 
+        bool isExcludedByGlobalRule = rules
+            .OfType<GlobalRule>()
+            .Any(rule => rule.IsWindowClassExcluded(hWnd));
+
         bool isExcludedByProcessRule = rules
             .OfType<ProcessRule>()
             .Any(rule => rule.IsProcessMatch(hWnd) && rule.IsWindowClassExcluded(hWnd));
@@ -416,6 +447,16 @@ public sealed class RuleService : IRuleService
             .Where(rule => rule.IsRuleApplicable(hWnd))
             .OrderByDescending(rule => rule.Priority)
             .FirstOrDefault();
+
+        if (mostApplicableRule is ClassRule)
+        {
+            return mostApplicableRule;
+        }
+
+        if (isExcludedByGlobalRule)
+        {
+            return null;
+        }
 
         if (isExcludedByProcessRule && mostApplicableRule is GlobalRule)
         {

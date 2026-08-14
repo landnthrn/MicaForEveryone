@@ -6,6 +6,8 @@ public interface IRuleService
 {
     void Initialize();
 
+    void RequestReapplyAfterResume();
+
     Task ApplyRulesToAllWindowsAsync();
 
     Task ApplyRuleToWindowAsync(TerraFX.Interop.Windows.HWND hwnd);

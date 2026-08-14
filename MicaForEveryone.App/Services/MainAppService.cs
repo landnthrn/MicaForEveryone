@@ -1,4 +1,6 @@
 ﻿using MicaForEveryone.App.Views;
+using MicaForEveryone.CoreUI;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
@@ -20,9 +22,23 @@ public sealed unsafe class MainAppService
     XamlIsland? _source;
     HWND _mainWnd;
     SettingsWindow? _window;
+    private const uint PowerBroadcastMessage = 0x0218;
+    private const uint SessionChangeMessage = 0x02B1;
+    private const uint ResumeSuspendPowerEvent = 0x0007;
+    private const uint ResumeAutomaticPowerEvent = 0x0012;
+    private const uint SessionUnlockEvent = 0x0008;
+    private const uint NotifyForThisSession = 0;
+
+    [DllImport("wtsapi32")]
+    private static extern BOOL WTSRegisterSessionNotification(HWND hWnd, uint dwFlags);
+
+    [DllImport("wtsapi32")]
+    private static extern BOOL WTSUnRegisterSessionNotification(HWND hWnd);
+
     private uint _taskbarCreatedMessage;
     private NOTIFYICONDATAW* _notifyIconData;
     private int _notificationIconRestoreTicksRemaining;
+    private bool _sessionNotificationRegistered;
 
     public void Initialize()
     {
@@ -60,6 +76,7 @@ public sealed unsafe class MainAppService
         var rgn = CreateRectRgn(0, 0, 0, 0);
         SetWindowRgn(_mainWnd, rgn, false);
         ShowWindow(_mainWnd, 5);
+        _sessionNotificationRegistered = WTSRegisterSessionNotification(_mainWnd, NotifyForThisSession) == BOOL.TRUE;
 
         fixed (char* lpWindowMessage = "TaskbarCreated")
         {
@@ -234,11 +251,31 @@ public sealed unsafe class MainAppService
                     break;
                 }
 
+            case PowerBroadcastMessage:
+                {
+                    if (wParam.Value == ResumeSuspendPowerEvent || wParam.Value == ResumeAutomaticPowerEvent)
+                        RequestResumeReapply();
+                    break;
+                }
+
+            case SessionChangeMessage:
+                {
+                    if (wParam.Value == SessionUnlockEvent)
+                        RequestResumeReapply();
+                    break;
+                }
+
             case WM.WM_DESTROY:
                 {
                     var pointer = GetWindowLongPtrW(hWnd, GWL.GWL_USERDATA);
                     var gc = GCHandle.FromIntPtr(pointer);
                     var appService = (MainAppService)(gc.Target!);
+
+                    if (appService._sessionNotificationRegistered)
+                    {
+                        WTSUnRegisterSessionNotification(hWnd);
+                        appService._sessionNotificationRegistered = false;
+                    }
 
                     NativeMemory.Free(appService._notifyIconData);
 
@@ -267,5 +304,10 @@ public sealed unsafe class MainAppService
                 }
         }
         return DefWindowProcW(hWnd, Msg, wParam, lParam);
+    }
+
+    private static void RequestResumeReapply()
+    {
+        App.Services.GetService<IRuleService>()?.RequestReapplyAfterResume();
     }
 }
